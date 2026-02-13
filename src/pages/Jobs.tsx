@@ -28,7 +28,7 @@ import {
 import {
   Briefcase, MapPin, DollarSign, Search, Loader2,
   ExternalLink, Sparkles, Globe, Clock, X, Calendar,
-  Filter, RefreshCw, Brain,
+  Filter, RefreshCw, Brain, Bookmark, Check,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -74,6 +74,7 @@ const Jobs = () => {
   const [jobType, setJobType] = useState<JobTypeFilter>("all");
   const [locationFilter, setLocationFilter] = useState("");
   const [aiCriteria, setAiCriteria] = useState<JobSearchCriteria | null>(null);
+  const [isAiFilterEnabled, setIsAiFilterEnabled] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
@@ -141,10 +142,10 @@ const Jobs = () => {
 
   // Build effective search keywords from AI criteria
   const getAISearchQuery = useCallback((): string | undefined => {
-    if (!aiCriteria) return undefined;
+    if (!aiCriteria || !isAiFilterEnabled) return undefined;
     // Use top 3 keywords for API query
     return aiCriteria.keywords.slice(0, 3).join(" ");
-  }, [aiCriteria]);
+  }, [aiCriteria, isAiFilterEnabled]);
 
   // Fetch jobs
   const loadJobs = useCallback(
@@ -163,7 +164,7 @@ const Jobs = () => {
   // Initial load & reload on source change
   useEffect(() => {
     loadJobs(search || undefined);
-  }, [activeSources, aiCriteria]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeSources, aiCriteria, isAiFilterEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced search
   useEffect(() => {
@@ -250,10 +251,106 @@ const Jobs = () => {
   // Build the combined skill set from user + AI
   const effectiveSkills = [
     ...userSkills,
-    ...(aiCriteria?.keywords ?? []),
-    ...(aiCriteria?.skills ?? []),
+    ...(isAiFilterEnabled ? (aiCriteria?.keywords ?? []) : []),
+    ...(isAiFilterEnabled ? (aiCriteria?.skills ?? []) : []),
   ];
   const uniqueEffectiveSkills = [...new Set(effectiveSkills)];
+
+  // Saved jobs logic
+  const [savedUrls, setSavedUrls] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    const loadSaved = async () => {
+      const { data } = await supabase
+        .from('saved_jobs')
+        .select('job:jobs!inner(apply_url)')
+        .eq('user_id', user.id);
+
+      if (data) {
+        const urls = new Set(data.map(d => (d.job as any).apply_url).filter(Boolean));
+        setSavedUrls(urls);
+      }
+    };
+    loadSaved();
+  }, [user]);
+
+  const handleSaveJob = async (job: RemoteJob) => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Please sign in to save jobs." });
+      return;
+    }
+
+    // Optimistic update
+    const isSaved = savedUrls.has(job.url);
+    if (isSaved) {
+      toast({ title: "Already saved", description: "This job is already in your saved list." });
+      return;
+    }
+
+    try {
+      // 1. Ensure job exists in jobs table
+      let jobId: string | null = null;
+
+      const { data: existing } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('apply_url', job.url)
+        .maybeSingle();
+
+      if (existing) {
+        jobId = existing.id;
+      } else {
+        const { data: inserted, error: insertError } = await supabase
+          .from('jobs')
+          .insert({
+            title: job.title,
+            company: job.company,
+            company_logo: job.company_logo, // might be empty string
+            description: job.description,
+            location: job.location,
+            salary_min: job.salary_min,
+            salary_max: job.salary_max,
+            apply_url: job.url,
+            source: job.source,
+            posted_at: job.date,
+            job_type: job.job_type,
+            skills_required: job.tags,
+          })
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        if (inserted) jobId = inserted.id;
+      }
+
+      if (jobId) {
+        const { error: saveError } = await supabase
+          .from('saved_jobs')
+          .insert({
+            user_id: user.id,
+            job_id: jobId,
+            status: 'saved',
+          });
+
+        if (saveError) {
+          // Check for duplicate key constraint just in case
+          if (saveError.code === '23505') { // unique_violation
+            setSavedUrls(prev => new Set(prev).add(job.url));
+            toast({ title: "Job Saved", description: "Job is saved." });
+            return;
+          }
+          throw saveError;
+        }
+
+        setSavedUrls(prev => new Set(prev).add(job.url));
+        toast({ title: "Job Saved", description: "Job has been added to your saved jobs." });
+      }
+    } catch (err: any) {
+      console.error("Save job error:", err);
+      toast({ title: "Error", description: "Could not save job. Please try again.", variant: "destructive" });
+    }
+  };
 
   // Apply pipeline: deep search → filters → skill ranking
   const filters: JobFilters = { jobType, locationFilter, salaryMin: null, tags: activeTags };
@@ -297,8 +394,16 @@ const Jobs = () => {
         </div>
 
         {/* AI Criteria Badge */}
-        {aiCriteria && (
-          <Card className="border-primary/20 bg-primary/5">
+        {aiCriteria && isAiFilterEnabled && (
+          <Card className="border-primary/20 bg-primary/5 relative group">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => setIsAiFilterEnabled(false)}
+            >
+              <X className="h-3 w-3" />
+            </Button>
             <CardContent className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -475,6 +580,8 @@ const Jobs = () => {
                 job={job}
                 score={uniqueEffectiveSkills.length > 0 ? matchScore(job, uniqueEffectiveSkills) : 0}
                 hasSkills={uniqueEffectiveSkills.length > 0}
+                isSaved={savedUrls.has(job.url)}
+                onSave={() => handleSaveJob(job)}
               />
             ))}
 
@@ -498,7 +605,8 @@ const Jobs = () => {
 
 /* ─── Job Card ─── */
 
-function JobCard({ job, score, hasSkills }: { job: RemoteJob; score: number; hasSkills: boolean }) {
+
+function JobCard({ job, score, hasSkills, isSaved, onSave }: { job: RemoteJob; score: number; hasSkills: boolean; isSaved: boolean; onSave: () => void }) {
   const [expanded, setExpanded] = useState(false);
 
   const timeAgo = (() => {
@@ -548,6 +656,18 @@ function JobCard({ job, score, hasSkills }: { job: RemoteJob; score: number; has
               </Badge>
             )}
             <Badge variant="outline" className="text-[10px]">{sourceLabel}</Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary"
+              onClick={(e) => {
+                e.preventDefault();
+                onSave();
+              }}
+              disabled={isSaved}
+            >
+              {isSaved ? <Check className="h-4 w-4 text-green-500" /> : <Bookmark className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 

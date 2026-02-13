@@ -65,7 +65,8 @@ const STANDARD_CATEGORIES = [
     "DevOps Engineer", "Data Scientist", "Machine Learning Engineer", "Product Manager",
     "UI/UX Designer", "QA Engineer", "Cloud Architect", "Cybersecurity Analyst",
     "System Administrator", "Project Manager", "Business Analyst", "Marketing Specialist",
-    "Sales Representative", "HR Specialist", "Customer Support", "Finance Analyst"
+    "Sales Representative", "HR Specialist", "Customer Support", "Finance Analyst",
+    "Engineering Manager", "Executive", "Legal", "Operations"
 ];
 
 // Helper to sanitize keywords based on standard roles/categories
@@ -143,7 +144,9 @@ export async function analyzeResumeForJobs(
     
     CRITICAL: 
     - Map the candidate to one or more of these STANDARD JOB CATEGORIES: ${STANDARD_CATEGORIES.join(", ")}.
-    - Extract standardized high-value ATS Keywords that relate to these categories (e.g., if "Frontend Developer", include "React", "TypeScript", "CSS", "Redux").
+    - IMPORTANT: Technologies like "React", "Next.js", "Vue", "Angular" MUST be associated with categories like "Frontend Developer" or "Full Stack Developer".
+    - Technologies like "Node.js", "Python", "Go", "Java" MUST be associated with "Backend Developer".
+    - Extract standardized high-value ATS Keywords separately.
     
     You MUST return ONLY valid JSON wrapped in a markdown code block (result starting with \`\`\`json).`;
 
@@ -156,14 +159,14 @@ export async function analyzeResumeForJobs(
     Target Role: ${targetRole || "Not specified"}
     
     Return JSON with these fields:
-    - "keywords": array of 15-20 high-impact ATS keywords (technical, tools, soft skills) that will match refined job descriptions.
-    - "roles": array of 5-8 precise job titles the candidate is qualified for.
-    - "skills": array of all identifiable technical and soft skills found in the text.
-    - "categories": array of 3-5 standardized job categories from the provided list.
+    - "keywords": array of 15-20 high-impact ATS keywords (technical, tools, soft skills).
+    - "roles": array of 5-8 precise job titles.
+    - "skills": array of all identifiable skills.
+    - "categories": array of 3-5 standardized categories from the list. If they have web skills like React/Next.js, MUST include "Frontend Developer" or "Full Stack Developer".
     - "experience_level": one of "Entry Level", "Junior", "Mid Level", "Senior", "Lead", "Principal", "Executive".
-    - "preferred_locations": array of locations mentioned or ["Remote"] if none.
-    - "salary_expectation": estimated salary range string (e.g., "$80,000 - $120,000").
-    - "industry_preferences": array of 3-5 industries where their skills are most valued.
+    - "preferred_locations": array of locations or ["Remote"].
+    - "salary_expectation": estimated range string.
+    - "industry_preferences": array of 3-5 industries.
     
     Return the JSON object wrapped in a markdown code block.`;
 

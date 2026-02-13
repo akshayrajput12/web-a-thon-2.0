@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Mic, Code, FileText, Briefcase, BarChart3, ArrowRight,
-  TrendingUp, Target, Clock, Zap, Activity, Sparkles, BrainCircuit
+  TrendingUp, Target, Clock, Zap, Activity, Sparkles, BrainCircuit,
+  MapPin, ExternalLink
 } from "lucide-react";
 
 interface DashboardStats {
@@ -27,17 +28,21 @@ const Dashboard = () => {
     savedJobs: 0,
   });
   const [profileName, setProfileName] = useState("");
+  const [savedJobsList, setSavedJobsList] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
+      setLoadingJobs(true);
       const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).single();
-      const [interviews, submissions, resumes, jobs] = await Promise.all([
+      const [interviews, submissions, resumes, jobs, savedJobsData] = await Promise.all([
         supabase.from("interviews").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("coding_submissions").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("resumes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
         supabase.from("saved_jobs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("saved_jobs").select(`*, job:jobs(*)`).eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
       ]);
 
       setStats({
@@ -50,6 +55,11 @@ const Dashboard = () => {
       if (profile?.full_name) {
         setProfileName(profile.full_name);
       }
+
+      if (savedJobsData.data) {
+        setSavedJobsList(savedJobsData.data);
+      }
+      setLoadingJobs(false);
     };
 
     fetchData();
@@ -189,6 +199,97 @@ const Dashboard = () => {
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Saved Jobs Section */}
+        <div className="space-y-4 pb-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Saved Jobs
+            </h2>
+            <Link to="/jobs" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+              Browse More <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {loadingJobs ? (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="border-border/50 bg-card/50">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="h-10 w-10 rounded-lg bg-muted animate-pulse" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                      <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : savedJobsList.length === 0 ? (
+            <Card className="border-border/50 bg-muted/5 border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                <Briefcase className="h-12 w-12 text-muted-foreground opacity-30" />
+                <p className="text-sm text-muted-foreground">You haven't saved any jobs yet.</p>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/jobs">Explore Job Feed</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {savedJobsList.map((saved) => (
+                <Card key={saved.id} className="group border-border/50 hover:border-primary/30 transition-all hover:shadow-md bg-card/50">
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <div className="flex items-start gap-3 mb-4">
+                      {saved.job?.company_logo ? (
+                        <img
+                          src={saved.job.company_logo}
+                          alt={saved.job.company}
+                          className="h-10 w-10 rounded-lg bg-muted object-contain p-1 border border-border/50"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center border border-border/50">
+                          <Briefcase className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-foreground truncate">{saved.job?.title}</h3>
+                        <p className="text-xs text-primary font-medium truncate">{saved.job?.company}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {saved.job?.location || "Remote"}
+                      </span>
+                      {saved.job?.salary_min && (
+                        <span className="flex items-center gap-1">
+                          <Zap className="h-3 w-3 text-yellow-500" />
+                          Matched
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-auto flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1 text-xs h-8" asChild>
+                        <a href={saved.job?.apply_url} target="_blank" rel="noopener noreferrer">
+                          Apply <ExternalLink className="ml-1 h-3 w-3" />
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                        <Link to="/jobs">
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
