@@ -29,11 +29,11 @@ const HeroSection = () => {
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Button variant="hero" size="lg" className="gap-2">
+          <Button variant="default" size="lg" className="gap-2">
             Start Free Trial
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button variant="heroOutline" size="lg">
+          <Button variant="outline" size="lg">
             Watch Demo
           </Button>
         </div>

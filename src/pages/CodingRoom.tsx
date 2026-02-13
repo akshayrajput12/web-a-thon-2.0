@@ -7,7 +7,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { useToast } from "@/hooks/use-toast";
 import {
   ChevronLeft, ChevronRight, Play, Loader2, CheckCircle2,
-  XCircle, Eye, EyeOff, Lightbulb, ArrowLeft, Timer, Send, Save,
+  XCircle, Eye, EyeOff, Lightbulb, ArrowLeft, Timer, Send, Save, ArrowRight, Activity
 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import type { CodingQuestion, CodeReviewResult } from "@/lib/coding-ai";
@@ -114,6 +114,9 @@ const CodingRoom = ({ questions, language, onExit, user, roundId, initialTimeRem
 
   const currentQ = questions[currentIdx];
   const currentCode = codes[currentIdx] || "";
+  const currentResults = testResults[currentIdx];
+  const totalCount = currentResults?.length || 0;
+  const passedCount = currentResults?.filter((r) => r.passed).length || 0;
 
   const handleCodeChange = useCallback(
     (value: string | undefined) => {
@@ -271,21 +274,17 @@ const CodingRoom = ({ questions, language, onExit, user, roundId, initialTimeRem
 
   const handleExit = () => onExit(timeLeftRef.current);
 
-  const timerColor = timeLeft < 300 ? "text-destructive" : timeLeft < 600 ? "text-yellow-400" : "text-primary";
-  const currentResults = testResults[currentIdx];
-  const passedCount = currentResults?.filter((r) => r.passed).length ?? 0;
-  const totalCount = currentResults?.length ?? 0;
-
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-[calc(100vh-80px)]">
+      <div className="flex flex-col h-[calc(100vh-80px)] bg-background/95 backdrop-blur-sm animate-in fade-in duration-500">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-2 py-2 border-b border-border/50">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleExit}>
-              <ArrowLeft className="h-4 w-4 mr-1" /> Exit
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/40 bg-card/50 shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={handleExit} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Exit Round
             </Button>
-            <div className="flex gap-1">
+            <div className="h-6 w-px bg-border/50" />
+            <div className="flex gap-2">
               {questions.map((_, i) => {
                 const hasResults = testResults[i];
                 const allPassed = hasResults?.every((r) => r.passed);
@@ -293,15 +292,14 @@ const CodingRoom = ({ questions, language, onExit, user, roundId, initialTimeRem
                   <button
                     key={i}
                     onClick={() => setCurrentIdx(i)}
-                    className={`h-7 w-7 rounded-full text-xs font-medium transition-all ${
-                      i === currentIdx
-                        ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
-                        : allPassed
-                        ? "bg-green-500/20 text-green-400"
+                    className={`h-8 w-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center border ${i === currentIdx
+                      ? "bg-primary text-primary-foreground border-primary ring-2 ring-primary/20 shadow-md transform scale-105"
+                      : allPassed
+                        ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
                         : hasResults
-                        ? "bg-destructive/20 text-destructive"
-                        : "bg-muted text-muted-foreground"
-                    }`}
+                          ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                          : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"
+                      }`}
                   >
                     {i + 1}
                   </button>
@@ -309,245 +307,313 @@ const CodingRoom = ({ questions, language, onExit, user, roundId, initialTimeRem
               })}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-4">
             {savedStatus[currentIdx] && (
-              <Badge variant="outline" className="text-green-400 border-green-400/30">
-                <Save className="h-3 w-3 mr-1" /> Saved
-              </Badge>
+              <div className="flex items-center gap-1.5 text-green-500 text-xs font-medium animate-in fade-in slide-in-from-right-4">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Saved
+              </div>
             )}
-            <Button variant="ghost" size="sm" onClick={() => setIsPaused((p) => !p)} className={timerColor}>
-              <Timer className="h-4 w-4 mr-1" />
-              {formatTime(timeLeft)}
-              {isPaused && <span className="ml-1 text-xs">(Paused)</span>}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-md border ${timeLeft < 300 ? "bg-destructive/10 border-destructive/20 text-destructive" : "bg-muted/30 border-border/50 text-foreground"}`}>
+              <Timer className="h-4 w-4 shrink-0" />
+              <span className="font-mono font-medium tabular-nums">{formatTime(timeLeft)}</span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsPaused((p) => !p)} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              {isPaused ? <Play className="h-4 w-4" /> : <span className="h-3 w-3 rounded-sm bg-current" />}
             </Button>
           </div>
         </div>
 
         {/* Main content */}
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={40} minSize={25}>
-            <div className="h-full overflow-y-auto p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-foreground">Q{currentIdx + 1}. {currentQ?.title}</h2>
-                <Badge className={DIFFICULTY_COLORS[currentQ?.difficulty || "medium"]}>{currentQ?.difficulty}</Badge>
-              </div>
-              <Badge variant="outline">{currentQ?.category}</Badge>
-              <div className="prose prose-sm text-foreground max-w-none">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{currentQ?.description}</p>
-                <div className="mt-3 space-y-1">
-                  <p className="text-xs font-semibold text-foreground uppercase">Input Format</p>
-                  <p className="text-sm text-muted-foreground">{currentQ?.input_format}</p>
+          <ResizablePanel defaultSize={40} minSize={25} className="bg-card">
+            <div className="h-full overflow-y-auto p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <h2 className="text-2xl font-bold text-foreground leading-tight">Q{currentIdx + 1}. {currentQ?.title}</h2>
+                  <Badge className={`${DIFFICULTY_COLORS[currentQ?.difficulty || "medium"]} px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide border-0`}>
+                    {currentQ?.difficulty}
+                  </Badge>
                 </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-semibold text-foreground uppercase">Output Format</p>
-                  <p className="text-sm text-muted-foreground">{currentQ?.output_format}</p>
-                </div>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-semibold text-foreground uppercase">Constraints</p>
-                  <p className="text-sm font-mono text-muted-foreground">{currentQ?.constraints}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="text-xs font-medium text-muted-foreground bg-muted/50 border-border/50">
+                    {currentQ?.category}
+                  </Badge>
                 </div>
               </div>
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-foreground uppercase">Examples</p>
-                {currentQ?.examples.map((ex, i) => (
-                  <div key={i} className="rounded-md bg-muted/50 p-3 space-y-1 text-sm font-mono">
-                    <div><span className="text-muted-foreground">Input:</span> <span className="text-foreground whitespace-pre-wrap">{ex.input}</span></div>
-                    <div><span className="text-muted-foreground">Output:</span> <span className="text-foreground">{ex.output}</span></div>
-                    {ex.explanation && <div className="text-xs text-muted-foreground mt-1 font-sans italic">{ex.explanation}</div>}
+
+              <div className="prose prose-invert prose-sm max-w-none text-muted-foreground leading-relaxed">
+                <p className="whitespace-pre-wrap">{currentQ?.description}</p>
+
+                <div className="grid gap-4 mt-6 p-4 rounded-xl bg-muted/20 border border-border/40">
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Input Format</h4>
+                    <p className="text-sm font-mono text-muted-foreground bg-background/50 p-2 rounded-md border border-border/30">{currentQ?.input_format}</p>
                   </div>
-                ))}
-              </div>
-              <div>
-                <Button variant="ghost" size="sm" onClick={() => setShowHints((p) => ({ ...p, [currentIdx]: !p[currentIdx] }))}>
-                  <Lightbulb className="h-4 w-4 mr-1" />{showHints[currentIdx] ? "Hide Hints" : "Show Hints"}
-                </Button>
-                {showHints[currentIdx] && (
-                  <div className="mt-2 space-y-1">
-                    {currentQ?.hints.map((h, i) => (
-                      <p key={i} className="text-sm text-muted-foreground pl-4 border-l-2 border-primary/30">💡 {h}</p>
-                    ))}
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Output Format</h4>
+                    <p className="text-sm font-mono text-muted-foreground bg-background/50 p-2 rounded-md border border-border/30">{currentQ?.output_format}</p>
                   </div>
-                )}
-              </div>
-              <div>
-                <Button variant="ghost" size="sm" onClick={() => setShowSolution((p) => ({ ...p, [currentIdx]: !p[currentIdx] }))}>
-                  {showSolution[currentIdx] ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
-                  {showSolution[currentIdx] ? "Hide Solution" : "Show Solution"}
-                </Button>
-                {showSolution[currentIdx] && currentQ?.solution[language] && (
-                  <div className="mt-2 rounded-md bg-muted/50 p-3">
-                    <pre className="text-xs font-mono text-foreground whitespace-pre-wrap overflow-x-auto">{currentQ.solution[language]}</pre>
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Constraints</h4>
+                    <p className="text-sm font-mono text-muted-foreground bg-background/50 p-2 rounded-md border border-border/30">{currentQ?.constraints}</p>
                   </div>
-                )}
+                </div>
+
+                <div className="mt-8 space-y-4">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2"><Eye className="h-4 w-4 text-primary" /> Examples</h4>
+                  {currentQ?.examples.map((ex, i) => (
+                    <div key={i} className="rounded-xl border border-border/40 bg-muted/20 overflow-hidden">
+                      <div className="p-3 grid gap-2 text-sm font-mono">
+                        <div className="grid grid-cols-[60px_1fr] gap-2">
+                          <span className="text-muted-foreground font-semibold">Input:</span>
+                          <span className="text-foreground">{ex.input}</span>
+                        </div>
+                        <div className="grid grid-cols-[60px_1fr] gap-2">
+                          <span className="text-muted-foreground font-semibold">Output:</span>
+                          <span className="text-foreground">{ex.output}</span>
+                        </div>
+                      </div>
+                      {ex.explanation && (
+                        <div className="bg-muted/30 p-2 px-3 text-xs text-muted-foreground border-t border-border/30 italic">
+                          {ex.explanation}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex justify-between pt-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} disabled={currentIdx === 0}>
-                  <ChevronLeft className="h-4 w-4" /> Prev
+
+              <div className="flex items-center gap-2 pt-4 border-t border-border/40">
+                <Button variant="ghost" size="sm" onClick={() => setShowHints((p) => ({ ...p, [currentIdx]: !p[currentIdx] }))} className="text-muted-foreground hover:text-yellow-500">
+                  <Lightbulb className="h-4 w-4 mr-2" />{showHints[currentIdx] ? "Hide Hints" : "Need a Hint?"}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setCurrentIdx(Math.min(questions.length - 1, currentIdx + 1))} disabled={currentIdx === questions.length - 1}>
-                  Next <ChevronRight className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={() => setShowSolution((p) => ({ ...p, [currentIdx]: !p[currentIdx] }))} className="text-muted-foreground hover:text-primary">
+                  {showSolution[currentIdx] ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                  {showSolution[currentIdx] ? "Hide Solution" : "View Solution"}
+                </Button>
+              </div>
+
+              {showHints[currentIdx] && (
+                <div className="space-y-2 animate-in slide-in-from-top-2">
+                  {currentQ?.hints.map((h, i) => (
+                    <div key={i} className="flex gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-sm">
+                      <Lightbulb className="h-4 w-4 shrink-0 mt-0.5" />
+                      <p>{h}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showSolution[currentIdx] && currentQ?.solution[language] && (
+                <div className="rounded-lg border border-border/40 overflow-hidden animate-in slide-in-from-top-2">
+                  <div className="bg-muted/50 px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border/40">Optimal Solution ({language})</div>
+                  <div className="bg-background/50 p-3 overflow-x-auto">
+                    <pre className="text-xs font-mono text-foreground whitespace-pre-wrap">{currentQ.solution[language]}</pre>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-6 pb-20">
+                <Button variant="outline" onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} disabled={currentIdx === 0} className="w-24">
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Prev
+                </Button>
+                <Button variant="outline" onClick={() => setCurrentIdx(Math.min(questions.length - 1, currentIdx + 1))} disabled={currentIdx === questions.length - 1} className="w-24">
+                  Next <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle className="bg-border/60 hover:bg-primary/50 transition-colors w-1" />
 
           <ResizablePanel defaultSize={60} minSize={35}>
             <ResizablePanelGroup direction="vertical">
-              <ResizablePanel defaultSize={60} minSize={30}>
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/30">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {language === "cpp" ? "C++" : language === "c" ? "C" : "Python"}
-                    </Badge>
+              <ResizablePanel defaultSize={65} minSize={30}>
+                <div className="flex flex-col h-full bg-[#1e1e1e]">
+                  <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#333]">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-[#333] text-gray-300 hover:bg-[#333] border-0 rounded-sm px-2 font-mono text-xs uppercase tracking-wider">
+                        {language === "cpp" ? "C++" : language === "c" ? "C" : "Python"}
+                      </Badge>
+                      <span className="text-xs text-gray-500">main.{language === "cpp" ? "cpp" : language === "c" ? "c" : "py"}</span>
+                    </div>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={handleRun} disabled={running || timeLeft <= 0}>
-                        {running ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                        Run Tests
+                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white border-0 h-8 shadow-sm" onClick={handleRun} disabled={running || timeLeft <= 0}>
+                        {running ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Play className="h-3.5 w-3.5 mr-1.5 fill-current" />}
+                        Run Code
                       </Button>
-                      <Button size="sm" variant="default" onClick={handleReview} disabled={reviewing || timeLeft <= 0}>
-                        {reviewing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
-                        AI Review
+                      <Button size="sm" variant="secondary" className="bg-blue-600 hover:bg-blue-700 text-white border-0 h-8 shadow-sm" onClick={handleReview} disabled={reviewing || timeLeft <= 0}>
+                        {reviewing ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
+                        Submit & Review
                       </Button>
                     </div>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <Editor
                       height="100%"
                       language={LANG_MONACO_MAP[language] || "plaintext"}
                       value={currentCode}
                       onChange={handleCodeChange}
                       theme="vs-dark"
-                      options={{ fontSize: 14, minimap: { enabled: false }, padding: { top: 12 }, scrollBeyondLastLine: false, wordWrap: "on", automaticLayout: true }}
+                      options={{
+                        fontSize: 14,
+                        minimap: { enabled: false },
+                        padding: { top: 16, bottom: 16 },
+                        scrollBeyondLastLine: false,
+                        wordWrap: "on",
+                        automaticLayout: true,
+                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                        fontLigatures: true,
+                        cursorBlinking: "smooth",
+                        smoothScrolling: true,
+                      }}
                     />
                   </div>
                 </div>
               </ResizablePanel>
 
-              <ResizableHandle withHandle />
+              <ResizableHandle withHandle className="bg-[#333] hover:bg-primary/50 transition-colors h-1" />
 
-              <ResizablePanel defaultSize={40} minSize={15}>
-                <div className="h-full flex flex-col bg-background">
+              <ResizablePanel defaultSize={35} minSize={15}>
+                <div className="h-full flex flex-col bg-background border-t border-border/40">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-                    <div className="flex items-center justify-between px-3 border-b border-border/50">
-                      <TabsList className="h-9 bg-transparent">
-                        <TabsTrigger value="tests" className="text-xs data-[state=active]:bg-muted">
-                          Test Results
+                    <div className="flex items-center justify-between px-4 border-b border-border/50 bg-muted/20">
+                      <TabsList className="h-10 bg-transparent p-0 gap-4">
+                        <TabsTrigger value="tests" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">
+                          Test Cases
                           {currentResults && (
-                            <span className={`ml-1.5 text-xs ${passedCount === totalCount && totalCount > 0 ? "text-green-400" : "text-destructive"}`}>
-                              ({passedCount}/{totalCount})
-                            </span>
+                            <Badge variant={passedCount === totalCount ? "default" : "destructive"} className="ml-2 h-5 px-1.5 text-[10px] uppercase">
+                              {passedCount}/{totalCount}
+                            </Badge>
                           )}
                         </TabsTrigger>
-                        <TabsTrigger value="review" className="text-xs data-[state=active]:bg-muted">
-                          AI Review
-                          {reviews[currentIdx] && <span className="ml-1.5 text-xs text-primary">({reviews[currentIdx].score}/100)</span>}
+                        <TabsTrigger value="review" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">
+                          AI Feedback
+                          {reviews[currentIdx] && <Badge variant="outline" className="ml-2 h-5 px-1.5 text-[10px] text-primary border-primary/30">{reviews[currentIdx].score}</Badge>}
                         </TabsTrigger>
                       </TabsList>
                       {currentResults && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="text-xs font-medium">
                           {passedCount === totalCount && totalCount > 0 ? (
-                            <Badge variant="outline" className="text-green-400 border-green-400/30 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" /> All Passed</Badge>
+                            <span className="text-green-500 flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> All Tests Passed</span>
                           ) : (
-                            <Badge variant="outline" className="text-destructive border-destructive/30 text-xs"><XCircle className="h-3 w-3 mr-1" /> {totalCount - passedCount} Failed</Badge>
+                            <span className="text-destructive flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5" /> {totalCount - passedCount} Failed</span>
                           )}
                         </div>
                       )}
                     </div>
 
-                    <TabsContent value="tests" className="flex-1 overflow-y-auto p-3 space-y-2 mt-0">
+                    <TabsContent value="tests" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0 bg-background/50">
                       {!currentResults ? (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                          <Play className="h-8 w-8 mb-2 opacity-40" />
-                          <p className="text-sm">Run tests to see results here</p>
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                            <Play className="h-6 w-6 opacity-40 ml-1" />
+                          </div>
+                          <p className="text-sm">Run your code to check against test cases.</p>
                         </div>
                       ) : (
                         currentResults.map((r, i) => (
-                          <div key={i} className={`rounded-lg border p-3 text-sm transition-all ${r.passed ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}>
-                            <div className="flex items-center justify-between mb-1.5">
+                          <div key={i} className={`rounded-xl border p-4 text-sm transition-all shadow-sm ${r.passed ? "bg-green-500/5 border-green-500/20" : "bg-destructive/5 border-destructive/20"}`}>
+                            <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                {r.passed ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <XCircle className="h-4 w-4 text-destructive" />}
-                                <span className="font-medium text-foreground">Test Case {i + 1}</span>
-                                {r.is_hidden && <Badge variant="outline" className="text-xs py-0">Hidden</Badge>}
+                                {r.passed ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-destructive" />}
+                                <span className="font-semibold text-foreground">Test Case {i + 1}</span>
+                                {r.is_hidden && <Badge variant="outline" className="text-[10px] py-0 h-5">Hidden</Badge>}
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                {r.time_ms && <span>⏱ {r.time_ms}s</span>}
-                                {r.memory_kb && <span>💾 {Math.round(r.memory_kb / 1024)}MB</span>}
-                                <Badge variant="outline" className={`text-xs py-0 ${r.passed ? "text-green-400 border-green-400/30" : "text-destructive border-destructive/30"}`}>
-                                  {r.passed ? "PASSED" : "FAILED"}
-                                </Badge>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                                {r.time_ms && <span>{r.time_ms}s</span>}
+                                {r.memory_kb && <span>{Math.round(r.memory_kb / 1024)}MB</span>}
                               </div>
                             </div>
                             {!r.is_hidden && (
-                              <div className="space-y-1.5 mt-2 font-mono text-xs">
-                                <div className="flex gap-2">
-                                  <span className="text-muted-foreground min-w-[60px]">Input:</span>
-                                  <pre className="text-foreground bg-muted/50 rounded px-2 py-1 flex-1 overflow-x-auto whitespace-pre-wrap">{r.input}</pre>
+                              <div className="grid gap-2 bg-background/40 rounded-lg p-3 border border-border/30 font-mono text-xs overflow-hidden">
+                                <div className="grid grid-cols-[70px_1fr] gap-2">
+                                  <span className="text-muted-foreground">Input:</span>
+                                  <span className="text-foreground">{r.input}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                  <span className="text-muted-foreground min-w-[60px]">Expected:</span>
-                                  <pre className="text-foreground bg-muted/50 rounded px-2 py-1 flex-1 overflow-x-auto whitespace-pre-wrap">{r.expected_output}</pre>
+                                <div className="grid grid-cols-[70px_1fr] gap-2">
+                                  <span className="text-muted-foreground">Expected:</span>
+                                  <span className="text-foreground">{r.expected_output}</span>
                                 </div>
                                 {!r.passed && (
-                                  <div className="flex gap-2">
-                                    <span className="text-destructive min-w-[60px]">Got:</span>
-                                    <pre className="text-destructive bg-destructive/5 rounded px-2 py-1 flex-1 overflow-x-auto whitespace-pre-wrap">{r.actual_output || "(empty)"}</pre>
+                                  <div className="grid grid-cols-[70px_1fr] gap-2">
+                                    <span className="text-destructive font-semibold">Output:</span>
+                                    <span className="text-destructive">{r.actual_output || "(empty)"}</span>
                                   </div>
                                 )}
                               </div>
                             )}
-                            {r.error && <div className="mt-2 text-xs text-destructive bg-destructive/5 rounded p-2 font-mono">❌ {r.error}</div>}
+                            {r.error && <div className="mt-3 text-xs text-destructive-foreground bg-destructive/10 rounded-md p-2.5 font-mono border border-destructive/20 leading-relaxed">{r.error}</div>}
                           </div>
                         ))
                       )}
                     </TabsContent>
 
-                    <TabsContent value="review" className="flex-1 overflow-y-auto p-3 mt-0">
+                    <TabsContent value="review" className="flex-1 overflow-y-auto p-6 mt-0 bg-background/50">
                       {!reviews[currentIdx] ? (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                          <Send className="h-8 w-8 mb-2 opacity-40" />
-                          <p className="text-sm">Submit for AI review</p>
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-3">
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                            <Send className="h-6 w-6 opacity-40 ml-0.5 mt-0.5" />
+                          </div>
+                          <p className="text-sm">Submit your solution to get detailed AI feedback.</p>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
-                            <div className="text-3xl font-bold text-primary">{reviews[currentIdx].score}<span className="text-lg text-muted-foreground">/100</span></div>
-                            <div className="space-y-0.5">
-                              <p className="text-xs text-muted-foreground">Time: <span className="text-foreground font-mono">{reviews[currentIdx].time_complexity}</span></p>
-                              <p className="text-xs text-muted-foreground">Space: <span className="text-foreground font-mono">{reviews[currentIdx].space_complexity}</span></p>
-                              {reviews[currentIdx].is_optimal && <Badge className="bg-green-500/20 text-green-400 text-xs mt-1">✨ Optimal</Badge>}
+                        <div className="space-y-6 max-w-3xl mx-auto">
+                          {/* Score Card */}
+                          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-background to-muted border border-border/50 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                              <Activity className="h-24 w-24" />
+                            </div>
+                            <div className="relative z-10 flex flex-col items-center justify-center text-center sm:text-left sm:items-start min-w-[120px]">
+                              <span className="text-4xl font-black text-primary tracking-tight">{reviews[currentIdx].score}</span>
+                              <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Score</span>
+                            </div>
+                            <div className="h-px w-full sm:w-px sm:h-16 bg-border/50" />
+                            <div className="flex-1 grid grid-cols-2 gap-4 w-full">
+                              <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider">Time Compl.</span>
+                                <p className="font-mono text-sm font-semibold">{reviews[currentIdx].time_complexity}</p>
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider">Space Compl.</span>
+                                <p className="font-mono text-sm font-semibold">{reviews[currentIdx].space_complexity}</p>
+                              </div>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{reviews[currentIdx].feedback}</p>
+
+                          <div className="space-y-4">
+                            <h3 className="text-base font-bold flex items-center gap-2"><ArrowRight className="h-4 w-4 text-primary" /> Analysis</h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed bg-muted/20 p-4 rounded-xl border border-border/40">
+                              {reviews[currentIdx].feedback}
+                            </p>
+                          </div>
+
                           {reviews[currentIdx].bugs.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-xs font-semibold text-destructive uppercase">Bugs Found</p>
-                              {reviews[currentIdx].bugs.map((b, i) => (
-                                <div key={i} className="flex items-start gap-2 text-sm text-destructive bg-destructive/5 rounded p-2">
-                                  <XCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" /><span>{b}</span>
-                                </div>
-                              ))}
+                            <div className="space-y-3">
+                              <h3 className="text-sm font-bold text-destructive flex items-center gap-2"><XCircle className="h-4 w-4" /> Potential Bugs</h3>
+                              <ul className="space-y-2">
+                                {reviews[currentIdx].bugs.map((b, i) => (
+                                  <li key={i} className="text-sm text-destructive-foreground bg-destructive/5 rounded-lg border border-destructive/10 p-3 pl-4 relative">
+                                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-destructive/40 rounded-l-lg" />
+                                    {b}
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
                           )}
+
                           {reviews[currentIdx].suggestions.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-xs font-semibold text-foreground uppercase">Suggestions</p>
-                              {reviews[currentIdx].suggestions.map((s, i) => (
-                                <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/30 rounded p-2">
-                                  <Lightbulb className="h-3.5 w-3.5 mt-0.5 shrink-0 text-yellow-400" /><span>{s}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {reviews[currentIdx].edge_cases.length > 0 && (
-                            <div className="space-y-1">
-                              <p className="text-xs font-semibold text-foreground uppercase">Edge Cases</p>
-                              {reviews[currentIdx].edge_cases.map((ec, i) => (
-                                <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/30 rounded p-2">
-                                  <Eye className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /><span>{ec}</span>
-                                </div>
-                              ))}
+                            <div className="space-y-3">
+                              <h3 className="text-sm font-bold text-yellow-500 flex items-center gap-2"><Lightbulb className="h-4 w-4" /> Optimization Tips</h3>
+                              <ul className="space-y-2">
+                                {reviews[currentIdx].suggestions.map((s, i) => (
+                                  <li key={i} className="text-sm text-foreground bg-yellow-500/5 rounded-lg border border-yellow-500/10 p-3 pl-4 relative">
+                                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-yellow-500/40 rounded-l-lg" />
+                                    {s}
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
                           )}
                         </div>

@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ChevronRight, ChevronLeft, Send, CheckCircle2, Building2 } from "lucide-react";
+import { Loader2, ChevronRight, ChevronLeft, Send, CheckCircle2, Building2, Target, Activity, Lightbulb } from "lucide-react";
 import { evaluateInterviewAnswer, generateInterviewReport } from "@/lib/interview-ai";
 
 interface Question {
@@ -220,131 +220,236 @@ const InterviewRoom = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-8 animate-in fade-in duration-700">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{interview.title}</h1>
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-              <Building2 className="h-4 w-4" /> {interview.company_name}
-              <span>·</span>
-              <span>{interview.target_role}</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{interview.title}</h1>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-secondary/30 text-secondary-foreground font-medium">
+                <Building2 className="h-3.5 w-3.5" /> {interview.company_name}
+              </span>
+              <span className="text-muted-foreground/40">•</span>
+              <span className="font-medium text-foreground/80">{interview.target_role}</span>
             </div>
           </div>
-          <Button variant="hero" onClick={finishInterview} disabled={finishing || answeredCount === 0}>
-            {finishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+          <Button
+            size="lg"
+            onClick={finishInterview}
+            disabled={finishing || answeredCount === 0}
+            className={`transition-all duration-300 shadow-md ${answeredCount === questions.length ? 'bg-green-600 hover:bg-green-700 text-white ring-2 ring-green-600/20' : ''}`}
+          >
+            {finishing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
             {finishing ? "Generating Report..." : "Finish & Get Report"}
           </Button>
         </div>
 
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Question {currentIdx + 1} of {questions.length}</span>
-            <span>{answeredCount}/{questions.length} answered</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-
-        {/* Question Navigation Pills */}
-        <div className="flex flex-wrap gap-2">
-          {questions.map((q, i) => {
-            const a = answers[q.id];
-            const isActive = i === currentIdx;
-            const isAnswered = a?.submitted;
-            return (
-              <button
-                key={q.id}
-                onClick={() => setCurrentIdx(i)}
-                className={`h-8 w-8 rounded-full text-xs font-medium transition-all ${
-                  isActive ? "bg-primary text-primary-foreground ring-2 ring-primary/30" :
-                  isAnswered ? "bg-accent/20 text-accent" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Question Card */}
-        {currentQ && (
-          <Card className="border-border/50">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <Badge variant="outline">{currentQ.category ?? "General"}</Badge>
-                  <Badge variant="outline" className="ml-2">{currentQ.difficulty ?? "medium"}</Badge>
-                </div>
-                <span className="text-sm text-muted-foreground">Q{currentQ.question_order}</span>
+        <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+          {/* Main Question Area */}
+          <div className="space-y-6">
+            {/* Progress & Navigation */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">
+                Question <span className="text-foreground">{currentIdx + 1}</span> of {questions.length}
+              </span>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} disabled={currentIdx === 0} className="hover:bg-primary/5 hover:text-primary">
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setCurrentIdx(Math.min(questions.length - 1, currentIdx + 1))} disabled={currentIdx === questions.length - 1} className="hover:bg-primary/5 hover:text-primary">
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
               </div>
-              <CardTitle className="text-lg text-foreground mt-3">{currentQ.question_text}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {currentAnswer?.submitted ? (
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-muted/30 p-4">
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Your Answer</p>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{currentAnswer.answer_text}</p>
+            </div>
+            <Progress value={progress} className="h-1.5 w-full bg-secondary/50 [&>div]:bg-primary/80" />
+
+            {/* Question Card */}
+            {currentQ && (
+              <Card className="border-border/60 shadow-sm transition-all duration-500 overflow-hidden">
+                <CardHeader className="bg-muted/5 border-b border-border/40 pb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Badge variant="outline" className="bg-background text-xs font-semibold uppercase tracking-wider text-muted-foreground border-border/60">
+                      {currentQ.category ?? "General"}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-semibold uppercase tracking-wider bg-background border-border/60 ${currentQ.difficulty === 'hard' ? 'text-destructive border-destructive/20' :
+                        currentQ.difficulty === 'medium' ? 'text-yellow-600 dark:text-yellow-400 border-yellow-500/20' :
+                          'text-green-600 dark:text-green-400 border-green-500/20'
+                        }`}
+                    >
+                      {currentQ.difficulty ?? "medium"}
+                    </Badge>
                   </div>
-                  {currentAnswer.ai_feedback && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold text-primary">{currentAnswer.score}/100</span>
-                        <span className="text-sm text-muted-foreground">{currentAnswer.ai_feedback.feedback}</span>
+                  <h2 className="text-xl md:text-2xl font-semibold text-foreground leading-snug">
+                    {currentQ.question_text}
+                  </h2>
+                </CardHeader>
+
+                <CardContent className="p-6 md:p-8 space-y-6">
+                  {currentAnswer?.submitted ? (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                      <div className="rounded-xl border border-border/50 bg-card p-5 shadow-sm">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Your Answer</p>
+                        <p className="text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">{currentAnswer.answer_text}</p>
                       </div>
-                      {currentAnswer.ai_feedback.strengths?.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Strengths</p>
-                          <ul className="list-disc pl-4 text-sm text-foreground space-y-0.5">
-                            {currentAnswer.ai_feedback.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      {currentAnswer.ai_feedback.improvements?.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Improvements</p>
-                          <ul className="list-disc pl-4 text-sm text-foreground space-y-0.5">
-                            {currentAnswer.ai_feedback.improvements.map((s: string, i: number) => <li key={i}>{s}</li>)}
-                          </ul>
-                        </div>
-                      )}
-                      {currentAnswer.ai_feedback.proper_answer && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Ideal Answer</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap bg-accent/5 p-3 rounded-lg">{currentAnswer.ai_feedback.proper_answer}</p>
+
+                      {currentAnswer.ai_feedback && (
+                        <div className="space-y-6">
+                          {/* Score Card */}
+                          <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-background to-muted border border-border/50 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                              <Activity className="h-24 w-24" />
+                            </div>
+                            <div className="relative z-10 flex flex-col items-center justify-center text-center sm:text-left sm:items-start min-w-[120px]">
+                              <span className="text-4xl font-black text-primary tracking-tight">{currentAnswer.score}</span>
+                              <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Score</span>
+                            </div>
+                            <div className="h-px w-full sm:w-px sm:h-16 bg-border/50" />
+                            <div className="flex-1 w-full relative z-10">
+                              <p className="text-sm text-muted-foreground leading-relaxed italic">
+                                "{currentAnswer.ai_feedback.feedback}"
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid sm:grid-cols-2 gap-6">
+                            {currentAnswer.ai_feedback.strengths?.length > 0 && (
+                              <div className="space-y-3">
+                                <h3 className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider flex items-center gap-2">
+                                  <CheckCircle2 className="h-4 w-4" /> That was great!
+                                </h3>
+                                <ul className="space-y-2">
+                                  {currentAnswer.ai_feedback.strengths.map((s: string, i: number) => (
+                                    <li key={i} className="text-sm text-foreground bg-green-500/5 rounded-lg border border-green-500/10 p-3 pl-4 relative">
+                                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-green-500/40 rounded-l-lg" />
+                                      {s}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {currentAnswer.ai_feedback.improvements?.length > 0 && (
+                              <div className="space-y-3">
+                                <h3 className="text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider flex items-center gap-2">
+                                  <Target className="h-4 w-4" /> Areas to Improve
+                                </h3>
+                                <ul className="space-y-2">
+                                  {currentAnswer.ai_feedback.improvements.map((s: string, i: number) => (
+                                    <li key={i} className="text-sm text-foreground bg-orange-500/5 rounded-lg border border-orange-500/10 p-3 pl-4 relative">
+                                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500/40 rounded-l-lg" />
+                                      {s}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+
+                          {currentAnswer.ai_feedback.proper_answer && (
+                            <div className="space-y-3 pt-2">
+                              <h3 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                                <Lightbulb className="h-4 w-4" /> Ideal Approach
+                              </h3>
+                              <div className="text-sm text-muted-foreground bg-muted/20 p-5 rounded-xl border border-border/40 leading-relaxed">
+                                {currentAnswer.ai_feedback.proper_answer}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Type your answer here... Be detailed and specific."
-                    value={currentAnswer?.answer_text ?? ""}
-                    onChange={(e) => updateAnswer(e.target.value)}
-                    rows={8}
-                    className="resize-none"
-                  />
-                  <Button variant="hero" onClick={submitAnswer} disabled={submitting || !currentAnswer?.answer_text?.trim()}>
-                    {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    {submitting ? "Evaluating..." : "Submit Answer"}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="relative">
+                        <Textarea
+                          placeholder="Type your answer here... Be specific and structure your thoughts clearly."
+                          value={currentAnswer?.answer_text ?? ""}
+                          onChange={(e) => updateAnswer(e.target.value)}
+                          rows={12}
+                          className="min-h-[300px] resize-none p-4 text-base leading-relaxed bg-background/50 focus:bg-background transition-all border-border/60 focus:ring-primary/20"
+                        />
+                        <div className="absolute bottom-3 right-3 text-xs text-muted-foreground pointer-events-none">
+                          {currentAnswer?.answer_text?.length || 0} chars
+                        </div>
+                      </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))} disabled={currentIdx === 0}>
-            <ChevronLeft className="mr-1 h-4 w-4" /> Previous
-          </Button>
-          <Button variant="outline" onClick={() => setCurrentIdx(Math.min(questions.length - 1, currentIdx + 1))} disabled={currentIdx === questions.length - 1}>
-            Next <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          size="lg"
+                          onClick={submitAnswer}
+                          disabled={submitting || !currentAnswer?.answer_text?.trim()}
+                          className="px-8 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300"
+                        >
+                          {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                          {submitting ? "Evaluating..." : "Submit Answer"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar / Question Map */}
+          <div className="hidden lg:block space-y-6">
+            <Card className="border-border/60 sticky top-6">
+              <CardHeader className="pb-4 border-b border-border/40">
+                <CardTitle className="text-base font-semibold">Session Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-4 gap-2">
+                  {questions.map((q, i) => {
+                    const a = answers[q.id];
+                    const isActive = i === currentIdx;
+                    const isAnswered = a?.submitted;
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => setCurrentIdx(i)}
+                        className={`
+                              relative flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-all duration-200
+                              ${isActive
+                            ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background z-10 scale-105 shadow-md"
+                            : isAnswered
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : "bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          }
+                            `}
+                      >
+                        {i + 1}
+                        {isAnswered && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-6 space-y-3 pt-6 border-t border-border/40">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-primary/10" />
+                      <span>Answered</span>
+                    </div>
+                    <span className="font-medium">{answeredCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-muted" />
+                      <span>Remaining</span>
+                    </div>
+                    <span className="font-medium">{questions.length - answeredCount}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </DashboardLayout>

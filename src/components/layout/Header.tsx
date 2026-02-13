@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X, Brain } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { MenuToggleIcon } from "@/components/ui/menu-toggle-icon";
+import { useScroll } from "@/components/ui/use-scroll";
+import { Brain } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
@@ -11,64 +14,116 @@ const NAV_LINKS = [
 ];
 
 const Header = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const scrolled = useScroll(10);
+
+  useEffect(() => {
+    if (open) {
+      // Disable scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Re-enable scroll
+      document.body.style.overflow = '';
+    }
+
+    // Cleanup when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between">
+    <header
+      className={cn(
+        'sticky top-0 z-50 mx-auto w-full max-w-5xl border-b border-transparent md:rounded-md md:border-transparent md:transition-all md:ease-out',
+        {
+          'bg-background/80 supports-[backdrop-filter]:bg-background/60 border-border/40 backdrop-blur-xl md:top-4 md:max-w-4xl md:border md:shadow-md':
+            scrolled && !open,
+          'bg-background': open,
+        },
+      )}
+    >
+      <nav
+        className={cn(
+          'flex h-16 w-full items-center justify-between px-4 md:h-14 md:transition-all md:ease-out md:px-6',
+          {
+            'md:px-4': scrolled,
+          },
+        )}
+      >
+        {/* Logo */}
         <a href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
-            <Brain className="h-5 w-5 text-primary" />
+          {/* Kept existing logo logic to match "content is same" */}
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
+            <Brain className="h-4 w-4 text-primary" />
           </div>
           <span className="text-lg font-bold text-foreground">HireSense AI</span>
         </a>
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
+        {/* Desktop Nav */}
+        <div className="hidden items-center gap-2 md:flex">
+          {NAV_LINKS.map((link, i) => (
+            <a key={i} className={cn(buttonVariants({ variant: 'ghost' }), "text-sm font-medium text-muted-foreground hover:text-foreground")} href={link.href}>
               {link.label}
             </a>
           ))}
-        </nav>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <Link to="/auth"><Button variant="ghost" size="sm">Sign In</Button></Link>
-          <Link to="/auth"><Button variant="hero" size="sm">Get Started</Button></Link>
+          <div className="flex items-center gap-2 ml-2">
+            <Link to="/auth">
+              <Button variant="ghost" size="sm">Sign In</Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm">Get Started</Button>
+            </Link>
+          </div>
         </div>
 
-        <button
-          className="text-foreground md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </div>
+        {/* Mobile Toggle */}
+        <Button size="icon" variant="outline" onClick={() => setOpen(!open)} className="md:hidden z-50">
+          <MenuToggleIcon open={open} className="size-5" duration={300} />
+        </Button>
+      </nav>
 
-      {mobileOpen && (
-        <div className="border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden">
-          <nav className="container flex flex-col gap-4 py-6">
+      {/* Mobile Menu */}
+      <div
+        className={cn(
+          'fixed inset-0 top-16 z-40 flex flex-col overflow-hidden bg-background md:hidden',
+          open ? 'block' : 'hidden',
+        )}
+      >
+        <div
+          data-slot={open ? 'open' : 'closed'}
+          className={cn(
+            'data-[slot=open]:animate-in data-[slot=open]:slide-in-from-top-5 data-[slot=open]:fade-in data-[slot=closed]:animate-out data-[slot=closed]:slide-out-to-top-5 data-[slot=closed]:fade-out',
+            'flex h-full w-full flex-col justify-between p-6 duration-300 ease-out',
+          )}
+        >
+          <div className="grid gap-4">
             {NAV_LINKS.map((link) => (
               <a
-                key={link.href}
+                key={link.label}
+                className={cn(buttonVariants({
+                  variant: 'ghost',
+                  className: 'justify-start text-lg py-4',
+                }))}
                 href={link.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                onClick={() => setMobileOpen(false)}
+                onClick={() => setOpen(false)}
               >
                 {link.label}
               </a>
             ))}
-            <div className="flex flex-col gap-2 pt-4">
-              <Link to="/auth"><Button variant="ghost" size="sm" className="w-full">Sign In</Button></Link>
-              <Link to="/auth"><Button variant="hero" size="sm" className="w-full">Get Started</Button></Link>
-            </div>
-          </nav>
+          </div>
+          <div className="flex flex-col gap-3 pb-8">
+            <Link to="/auth" onClick={() => setOpen(false)}>
+              <Button variant="outline" className="w-full text-lg py-6">
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/auth" onClick={() => setOpen(false)}>
+              <Button className="w-full text-lg py-6">Get Started</Button>
+            </Link>
+          </div>
         </div>
-      )}
+      </div>
     </header>
   );
 };

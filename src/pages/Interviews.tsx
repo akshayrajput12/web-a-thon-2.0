@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, Plus, Clock, Target, Loader2, Building2, IndianRupee, FileText, Play, BarChart3, Trash2 } from "lucide-react";
+import { Mic, Plus, Clock, Target, Loader2, Building2, IndianRupee, FileText, Play, BarChart3, Trash2, ArrowRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { generateInterviewQuestionsFromContext } from "@/lib/interview-ai";
@@ -198,75 +198,116 @@ const Interviews = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Mock Interviews</h1>
-            <p className="text-muted-foreground">AI-powered interview simulations tailored to your target company.</p>
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">Mock Interviews</h1>
+            <p className="text-muted-foreground max-w-2xl text-lg">
+              Master your interview skills with AI-powered simulations tailored to your target roles.
+            </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="hero"><Plus className="mr-2 h-4 w-4" /> New Interview</Button>
+              <Button size="lg" className="shadow-lg hover:shadow-primary/25 transition-all duration-300">
+                <Plus className="mr-2 h-5 w-5" /> New Interview
+              </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl">
               <DialogHeader>
-                <DialogTitle>Create New Interview</DialogTitle>
-                <DialogDescription>Fill in the company and role details. AI will generate tailored questions using your resume.</DialogDescription>
+                <DialogTitle className="text-2xl font-bold text-foreground">Create New Interview</DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground">
+                  Configure your session details. Our AI will generate custom questions based on your profile.
+                </DialogDescription>
               </DialogHeader>
 
               {/* Resume status */}
-              <div className="rounded-lg border border-border/50 bg-muted/30 p-3 flex items-center gap-3">
-                <FileText className="h-5 w-5 text-primary" />
+              <div className={`rounded-xl border p-4 flex items-center gap-4 transition-colors ${resume ? "border-primary/20 bg-primary/5" : "border-destructive/20 bg-destructive/5"}`}>
+                <div className={`p-2 rounded-full ${resume ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+                  <FileText className="h-5 w-5" />
+                </div>
                 {resume ? (
                   <div>
-                    <p className="text-sm font-medium text-foreground">Resume: {resume.file_name}</p>
-                    <p className="text-xs text-muted-foreground">Your resume will be used for personalized questions</p>
+                    <p className="text-sm font-semibold text-foreground">Using Resume: {resume.file_name}</p>
+                    <p className="text-xs text-muted-foreground">Tailored questions will be generated from this file.</p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-sm font-medium text-destructive">No resume uploaded</p>
-                    <p className="text-xs text-muted-foreground">Upload a resume in your Profile for better results</p>
+                    <p className="text-sm font-semibold text-destructive">No Resume Found</p>
+                    <p className="text-xs text-destructive-foreground/80">Upload a resume in your Profile for the best experience.</p>
                   </div>
                 )}
               </div>
 
-              <div className="grid gap-4 py-2">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Interview Title *</Label>
-                    <Input placeholder="e.g. Google SDE-2 Prep" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              <div className="grid gap-6 py-4">
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2.5">
+                    <Label className="text-sm font-medium text-foreground/80">Interview Title</Label>
+                    <Input
+                      placeholder="e.g. Google Frontend Loop"
+                      value={form.title}
+                      onChange={(e) => setForm({ ...form, title: e.target.value })}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Target Role *</Label>
-                    <Input placeholder="e.g. Senior Software Engineer" value={form.target_role} onChange={(e) => setForm({ ...form, target_role: e.target.value })} />
+                  <div className="space-y-2.5">
+                    <Label className="text-sm font-medium text-foreground/80">Target Role</Label>
+                    <Input
+                      placeholder="e.g. Senior React Developer"
+                      value={form.target_role}
+                      onChange={(e) => setForm({ ...form, target_role: e.target.value })}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Company Name *</Label>
-                  <Input placeholder="e.g. Google, Flipkart, Infosys" value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">Company Name</Label>
+                  <Input
+                    placeholder="e.g. Acme Corp"
+                    value={form.company_name}
+                    onChange={(e) => setForm({ ...form, company_name: e.target.value })}
+                    className="bg-background/50 focus:bg-background transition-colors"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Company Description</Label>
-                  <Textarea placeholder="Brief about the company, domain, products..." value={form.company_description} onChange={(e) => setForm({ ...form, company_description: e.target.value })} rows={2} />
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">Company Description <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                  <Textarea
+                    placeholder="Briefly describe the company culture or product..."
+                    value={form.company_description}
+                    onChange={(e) => setForm({ ...form, company_description: e.target.value })}
+                    rows={2}
+                    className="bg-background/50 focus:bg-background transition-colors resize-none"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Job Description</Label>
-                  <Textarea placeholder="Paste the full job description here..." value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} rows={3} />
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">Job Description <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                  <Textarea
+                    placeholder="Paste the JD here for precise targeting..."
+                    value={form.job_description}
+                    onChange={(e) => setForm({ ...form, job_description: e.target.value })}
+                    rows={3}
+                    className="bg-background/50 focus:bg-background transition-colors resize-none"
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Requirements</Label>
-                  <Textarea placeholder="Key skills, qualifications, certifications..." value={form.requirements} onChange={(e) => setForm({ ...form, requirements: e.target.value })} rows={2} />
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">Key Requirements <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                  <Textarea
+                    placeholder="Specific skills or certifications needed..."
+                    value={form.requirements}
+                    onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+                    rows={2}
+                    className="bg-background/50 focus:bg-background transition-colors resize-none"
+                  />
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label>Interview Type</Label>
+                <div className="grid gap-6 sm:grid-cols-3">
+                  <div className="space-y-2.5">
+                    <Label className="text-sm font-medium text-foreground/80">Type</Label>
                     <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as InterviewType })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="behavioral">Behavioral</SelectItem>
                         <SelectItem value="technical">Technical</SelectItem>
@@ -275,10 +316,10 @@ const Interviews = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Difficulty</Label>
+                  <div className="space-y-2.5">
+                    <Label className="text-sm font-medium text-foreground/80">Difficulty</Label>
                     <Select value={form.difficulty} onValueChange={(v) => setForm({ ...form, difficulty: v as DifficultyLevel })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-background/50"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="easy">Easy</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
@@ -286,26 +327,48 @@ const Interviews = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Experience Required</Label>
-                    <Input placeholder="e.g. 3-5 years" value={form.experience_required} onChange={(e) => setForm({ ...form, experience_required: e.target.value })} />
+                  <div className="space-y-2.5">
+                    <Label className="text-sm font-medium text-foreground/80">Experience</Label>
+                    <Input
+                      placeholder="e.g. 3-5 years"
+                      value={form.experience_required}
+                      onChange={(e) => setForm({ ...form, experience_required: e.target.value })}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
                   </div>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Salary Min (LPA)</Label>
-                    <Input type="number" placeholder="e.g. 15" value={form.salary_min} onChange={(e) => setForm({ ...form, salary_min: e.target.value })} />
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-2.5">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium text-foreground/80"><IndianRupee className="h-3.5 w-3.5" /> Salary Min (LPA)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 15"
+                      value={form.salary_min}
+                      onChange={(e) => setForm({ ...form, salary_min: e.target.value })}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Salary Max (LPA)</Label>
-                    <Input type="number" placeholder="e.g. 25" value={form.salary_max} onChange={(e) => setForm({ ...form, salary_max: e.target.value })} />
+                  <div className="space-y-2.5">
+                    <Label className="flex items-center gap-1.5 text-sm font-medium text-foreground/80"><IndianRupee className="h-3.5 w-3.5" /> Salary Max (LPA)</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 25"
+                      value={form.salary_max}
+                      onChange={(e) => setForm({ ...form, salary_max: e.target.value })}
+                      className="bg-background/50 focus:bg-background transition-colors"
+                    />
                   </div>
                 </div>
 
-                <Button variant="hero" onClick={handleCreate} disabled={creating || !form.title || !form.company_name || !form.target_role} className="w-full">
+                <Button
+                  onClick={handleCreate}
+                  disabled={creating || !form.title || !form.company_name || !form.target_role}
+                  className="w-full mt-2 shadow-md hover:shadow-primary/25 transition-all"
+                  size="lg"
+                >
                   {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {creating ? "Generating Questions..." : "Create Interview"}
+                  {creating ? "Generating Customized Questions..." : "Generate Interview Session"}
                 </Button>
               </div>
             </DialogContent>
@@ -313,77 +376,126 @@ const Interviews = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          <div className="flex justify-center py-32"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
         ) : interviews.length === 0 ? (
-          <Card className="border-border/50">
-            <CardContent className="flex flex-col items-center gap-4 py-16">
-              <Mic className="h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">No interviews yet. Create your first mock interview!</p>
+          <Card className="border-dashed border-2 border-border/60 bg-muted/10">
+            <CardContent className="flex flex-col items-center gap-6 py-24 text-center">
+              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mic className="h-10 w-10 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-foreground">No Interviews Yet</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto">
+                  Ready to test your skills? Create your first AI-driven interview specifically designed for your dream job.
+                </p>
+              </div>
+              <Button size="lg" onClick={() => setDialogOpen(true)} variant="outline" className="mt-4">
+                Start Your First Session
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {interviews.map((interview) => (
-              <Card key={interview.id} className="border-border/50 transition-all hover:border-primary/30 cursor-pointer" onClick={() => {
-                if (interview.status === "completed") navigate(`/interviews/${interview.id}/report`);
-                else navigate(`/interviews/${interview.id}`);
-              }}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg text-foreground">{interview.title}</CardTitle>
-                    <Badge className={STATUS_COLORS[interview.status]}>{interview.status.replace("_", " ")}</Badge>
+              <Card
+                key={interview.id}
+                className="group relative overflow-hidden border-border/50 bg-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer"
+                onClick={() => {
+                  if (interview.status === "completed") navigate(`/interviews/${interview.id}/report`);
+                  else navigate(`/interviews/${interview.id}`);
+                }}
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                </div>
+
+                <CardHeader className="pb-3 pt-6">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between">
+                      <Badge
+                        variant="secondary"
+                        className={`capitalize px-2.5 py-0.5 text-xs font-semibold tracking-wide ${interview.status === 'completed' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                          interview.status === 'in_progress' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                            'bg-muted text-muted-foreground'
+                          }`}
+                      >
+                        {interview.status.replace("_", " ")}
+                      </Badge>
+                      {interview.overall_score !== null && (
+                        <div className="flex items-center gap-1.5 text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                          <Target className="h-3.5 w-3.5" /> {interview.overall_score}%
+                        </div>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl font-bold text-foreground line-clamp-1 leading-tight group-hover:text-primary transition-colors">
+                      {interview.title}
+                    </CardTitle>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {interview.company_name && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Building2 className="h-4 w-4" />
-                      {interview.company_name}
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{interview.type.replace("_", " ")}</Badge>
-                    <Badge variant="outline">{interview.difficulty}</Badge>
+
+                <CardContent className="space-y-5 pb-6">
+                  <div className="space-y-2.5">
+                    {interview.company_name && (
+                      <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                        <Building2 className="h-4 w-4 shrink-0 opacity-70" />
+                        <span className="font-medium text-foreground/80 line-clamp-1">{interview.company_name}</span>
+                      </div>
+                    )}
+                    {interview.target_role && (
+                      <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                        <Target className="h-4 w-4 shrink-0 opacity-70" />
+                        <span className="line-clamp-1">{interview.target_role}</span>
+                      </div>
+                    )}
+                    {(interview.salary_min || interview.salary_max) && (
+                      <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                        <IndianRupee className="h-4 w-4 shrink-0 opacity-70" />
+                        <span>
+                          {interview.salary_min && `₹${interview.salary_min}L`}{interview.salary_min && interview.salary_max && " - "}{interview.salary_max && `₹${interview.salary_max}L`}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {interview.target_role && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Target className="h-4 w-4" />{interview.target_role}
-                    </div>
-                  )}
-                  {(interview.salary_min || interview.salary_max) && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <IndianRupee className="h-4 w-4" />
-                      {interview.salary_min && `₹${interview.salary_min}`}{interview.salary_min && interview.salary_max && " - "}{interview.salary_max && `₹${interview.salary_max}`} LPA
-                    </div>
-                  )}
-                  {interview.overall_score !== null && (
-                    <p className="text-sm font-medium text-primary">Score: {interview.overall_score}%</p>
-                  )}
-                  <div className="flex gap-2 pt-1">
-                    {interview.status === "in_progress" && (
-                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); navigate(`/interviews/${interview.id}`); }}>
-                        <Play className="mr-1 h-3 w-3" /> Continue
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Badge variant="outline" className="bg-background/50 text-xs font-medium border-border/60 capitalize">
+                      {interview.type.replace("_", " ")}
+                    </Badge>
+                    <Badge variant="outline" className={`bg-background/50 text-xs font-medium border-border/60 capitalize ${interview.difficulty === 'hard' ? 'text-destructive' :
+                      interview.difficulty === 'medium' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-green-600 dark:text-green-400'
+                      }`}>
+                      {interview.difficulty}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2 border-t border-border/30 mt-4">
+                    {interview.status === "in_progress" ? (
+                      <Button size="sm" className="w-full bg-primary/10 hover:bg-primary/20 text-primary shadow-none border-0" onClick={(e) => { e.stopPropagation(); navigate(`/interviews/${interview.id}`); }}>
+                        <Play className="mr-2 h-3.5 w-3.5 fill-current" /> Resume
                       </Button>
-                    )}
-                    {interview.status === "completed" && (
-                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); navigate(`/interviews/${interview.id}/report`); }}>
-                        <BarChart3 className="mr-1 h-3 w-3" /> View Report
+                    ) : interview.status === "completed" ? (
+                      <Button size="sm" variant="outline" className="w-full hover:bg-muted" onClick={(e) => { e.stopPropagation(); navigate(`/interviews/${interview.id}/report`); }}>
+                        <BarChart3 className="mr-2 h-3.5 w-3.5" /> Analysis
                       </Button>
-                    )}
+                    ) : null}
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" onClick={(e) => e.stopPropagation()}>
-                          <Trash2 className="h-3 w-3" />
+                        <Button size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" onClick={(e) => e.stopPropagation()}>
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Interview?</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently delete this interview, all questions, answers, and reports associated with it.</AlertDialogDescription>
+                          <AlertDialogTitle>Delete Interview Session?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. All questions, answers, and generated reports for <span className="font-medium text-foreground">{interview.title}</span> will be permanently removed.
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={(e) => handleDelete(interview.id, e)}>Delete</AlertDialogAction>
+                          <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={(e) => handleDelete(interview.id, e)}>Delete Permanently</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
