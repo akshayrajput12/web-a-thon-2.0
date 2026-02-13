@@ -8,76 +8,148 @@ import { Brain, Code, FileText, Briefcase, Zap, Search, Layout, Database, Termin
 // Icons for the orbit display
 const iconsArray = [
   {
-    component: () => <Brain className="h-8 w-8 text-primary" />,
-    className: 'size-[50px] border-none bg-transparent',
+    component: () => (
+      <img
+        width={30}
+        height={30}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg'
+        alt='HTML5'
+      />
+    ),
+    className: 'size-[30px] border-none bg-transparent',
+    duration: 20,
+    delay: 20,
     radius: 90,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <img
+        width={30}
+        height={30}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg'
+        alt='CSS3'
+      />
+    ),
+    className: 'size-[30px] border-none bg-transparent',
+    duration: 20,
+    delay: 10,
+    radius: 90,
+    path: false,
+    reverse: false,
+  },
+  {
+    component: () => (
+      <img
+        width={50}
+        height={50}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg'
+        alt='TypeScript'
+      />
+    ),
+    className: 'size-[50px] border-none bg-transparent',
+    radius: 170,
     duration: 20,
     path: false,
     reverse: false,
   },
   {
-    component: () => <Code className="h-6 w-6 text-blue-500" />,
-    className: 'size-[40px] border-none bg-transparent',
-    radius: 140,
+    component: () => (
+      <img
+        width={50}
+        height={50}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg'
+        alt='JavaScript'
+      />
+    ),
+    className: 'size-[50px] border-none bg-transparent',
+    radius: 170,
     duration: 20,
     delay: 20,
     path: false,
-    reverse: true,
-  },
-  {
-    component: () => <FileText className="h-10 w-10 text-amber-500" />,
-    className: 'size-[60px] border-none bg-transparent',
-    radius: 200,
-    duration: 25,
-    delay: 10,
-    path: false,
     reverse: false,
   },
   {
-    component: () => <Briefcase className="h-6 w-6 text-emerald-500" />,
-    className: 'size-[40px] border-none bg-transparent',
-    radius: 140,
+    component: () => (
+      <img
+        width={30}
+        height={30}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg'
+        alt='TailwindCSS'
+      />
+    ),
+    className: 'size-[30px] border-none bg-transparent',
     duration: 20,
-    delay: 40,
+    delay: 20,
+    radius: 130,
     path: false,
     reverse: true,
   },
   {
-    component: () => <Zap className="h-5 w-5 text-yellow-500" />,
+    component: () => (
+      <img
+        width={30}
+        height={30}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg'
+        alt='Nextjs'
+        className="invert dark:invert-0"
+      />
+    ),
     className: 'size-[30px] border-none bg-transparent',
-    radius: 90,
+    duration: 20,
+    delay: 10,
+    radius: 130,
+    path: false,
+    reverse: true,
+  },
+  {
+    component: () => (
+      <img
+        width={50}
+        height={50}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg'
+        alt='React'
+      />
+    ),
+    className: 'size-[50px] border-none bg-transparent',
+    radius: 230,
+    duration: 20,
+    path: false,
+    reverse: true,
+  },
+  {
+    component: () => (
+      <img
+        width={50}
+        height={50}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/figma/figma-original.svg'
+        alt='Figma'
+      />
+    ),
+    className: 'size-[50px] border-none bg-transparent',
+    radius: 230,
     duration: 20,
     delay: 60,
     path: false,
-    reverse: false,
+    reverse: true,
   },
   {
-    component: () => <Search className="h-8 w-8 text-purple-500" />,
+    component: () => (
+      <img
+        width={50}
+        height={50}
+        src='https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg'
+        alt='Git'
+      />
+    ),
     className: 'size-[50px] border-none bg-transparent',
-    radius: 260,
-    duration: 30,
-    delay: 0,
-    path: false,
-    reverse: true,
-  },
-  {
-    component: () => <Layout className="h-6 w-6 text-pink-500" />,
-    className: 'size-[40px] border-none bg-transparent',
-    radius: 200,
-    duration: 25,
-    delay: 50,
+    radius: 290,
+    duration: 20,
+    delay: 20,
     path: false,
     reverse: false,
   },
-  {
-    component: () => <Database className="h-7 w-7 text-cyan-500" />,
-    className: 'size-[45px] border-none bg-transparent',
-    radius: 260,
-    duration: 30,
-    delay: 30,
-    path: false,
-    reverse: true,
-  }
 ];
 
 const Auth = () => {
