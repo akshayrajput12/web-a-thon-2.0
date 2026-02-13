@@ -4,6 +4,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MenuToggleIcon } from "@/components/ui/menu-toggle-icon";
 import { useScroll } from "@/components/ui/use-scroll";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Brain } from "lucide-react";
 
 const NAV_LINKS = [
@@ -75,12 +76,16 @@ const Header = () => {
               <Button size="sm">Get Started</Button>
             </Link>
           </div>
+          <ModeToggle />
         </div>
 
         {/* Mobile Toggle */}
-        <Button size="icon" variant="outline" onClick={() => setOpen(!open)} className="md:hidden z-50">
-          <MenuToggleIcon open={open} className="size-5" duration={300} />
-        </Button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ModeToggle />
+          <Button size="icon" variant="outline" onClick={() => setOpen(!open)} className="z-50">
+            <MenuToggleIcon open={open} className="size-5" duration={300} />
+          </Button>
+        </div>
       </nav>
 
       {/* Mobile Menu */}

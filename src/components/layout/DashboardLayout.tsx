@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,11 +24,24 @@ interface DashboardLayoutProps {
 
 // ... imports
 import { ModeToggle } from "@/components/mode-toggle";
+import { useTheme } from "@/components/theme-provider";
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { signOut } = useAuth();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
+
+  // Enforce dark mode on dashboard by default if not set
+  useEffect(() => {
+    // We only enforce it once per session or if it's explicitly 'light' when entering
+    // However, user might want to toggle it back. 
+    // The requirement says "when we go there by default dark mode".
+    // We'll set it to dark if the current theme is light.
+    if (theme === 'light') {
+      setTheme('dark');
+    }
+  }, []); // Run once on mount
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
