@@ -66,7 +66,8 @@ const STANDARD_CATEGORIES = [
     "UI/UX Designer", "QA Engineer", "Cloud Architect", "Cybersecurity Analyst",
     "System Administrator", "Project Manager", "Business Analyst", "Marketing Specialist",
     "Sales Representative", "HR Specialist", "Customer Support", "Finance Analyst",
-    "Engineering Manager", "Executive", "Legal", "Operations"
+    "Engineering Manager", "Executive", "Legal", "Operations",
+    "Developer", "Management"
 ];
 
 // Helper to sanitize keywords based on standard roles/categories
@@ -114,6 +115,13 @@ function mapToStandardCategories(rawCategories: string[]): string[] {
     });
 }
 
+const CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 Hour
+
+interface CacheWrapper {
+    criteria: JobSearchCriteria;
+    timestamp: number;
+}
+
 export async function analyzeResumeForJobs(
     resumeText: string,
     userSkills: string[],
@@ -123,7 +131,11 @@ export async function analyzeResumeForJobs(
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
         try {
-            return JSON.parse(cached) as JobSearchCriteria;
+            const wrapper = JSON.parse(cached) as CacheWrapper;
+            const isExpired = Date.now() - wrapper.timestamp > CACHE_EXPIRY_MS;
+            if (!isExpired) {
+                return wrapper.criteria;
+            }
         } catch {
             localStorage.removeItem(CACHE_KEY);
         }
@@ -203,7 +215,11 @@ export async function analyzeResumeForJobs(
             };
 
             // Cache in localStorage
-            localStorage.setItem(CACHE_KEY, JSON.stringify(criteria));
+            const wrapper: CacheWrapper = {
+                criteria,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(wrapper));
             return criteria;
         } catch (parseError) {
             console.error("Failed to parse job criteria JSON:", jsonStr.substring(0, 500));
@@ -234,7 +250,13 @@ export function getCachedCriteria(): JobSearchCriteria | null {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
     try {
-        return JSON.parse(cached) as JobSearchCriteria;
+        const wrapper = JSON.parse(cached) as CacheWrapper;
+        const isExpired = Date.now() - wrapper.timestamp > CACHE_EXPIRY_MS;
+        if (isExpired) {
+            localStorage.removeItem(CACHE_KEY);
+            return null;
+        }
+        return wrapper.criteria;
     } catch {
         return null;
     }

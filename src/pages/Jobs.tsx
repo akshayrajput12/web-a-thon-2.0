@@ -316,6 +316,7 @@ const Jobs = () => {
             posted_at: job.date,
             job_type: job.job_type,
             skills_required: job.tags,
+            category: job.category,
           })
           .select('id')
           .single();
