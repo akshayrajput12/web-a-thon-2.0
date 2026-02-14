@@ -1,58 +1,103 @@
+import { StaggerTestimonials } from "@/components/ui/stagger-testimonials";
+import { motion } from "motion/react";
+
 const TESTIMONIALS = [
   {
-    quote: "HireSense AI helped me prepare for my Google interview in just two weeks. The AI mock interviews were incredibly realistic.",
-    name: "Sarah Chen",
-    role: "Software Engineer at Google",
-    initials: "SC",
+    tempId: 0,
+    testimonial: "The AI mock interviews were a game changer. I felt so much more prepared for my technical rounds at Google.",
+    by: "Sarah Chen, Software Engineer at Google",
+    imgSrc: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150&h=150"
   },
   {
-    quote: "The resume intelligence feature boosted my ATS score from 45% to 92%. I started getting callbacks within days.",
-    name: "Marcus Johnson",
-    role: "Product Manager at Meta",
-    initials: "MJ",
+    tempId: 1,
+    testimonial: "My resume score went from 45 to 90 using the Resume Intelligence tool. Got callbacks immediately.",
+    by: "Michael Ross, Product Manager at Stripe",
+    imgSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150"
   },
   {
-    quote: "The coding challenges and real-time feedback transformed my problem-solving approach. Highly recommend for anyone targeting FAANG.",
-    name: "Priya Patel",
-    role: "Data Scientist at Amazon",
-    initials: "PP",
+    tempId: 2,
+    testimonial: "The job matching is incredibly accurate. It found roles I wouldn't have found on my own.",
+    by: "Jessica Lee, UX Designer at Airbnb",
+    imgSrc: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150&h=150"
   },
+  {
+    tempId: 3,
+    testimonial: "Love the live coding challenges. Exact same environment as the real interviews.",
+    by: "David Kim, Full Stack Dev at Amazon",
+    imgSrc: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150&h=150"
+  },
+  {
+    tempId: 4,
+    testimonial: "The career roadmap gave me a clear path to my promotion. Highly recommend.",
+    by: "Emily Rodriguez, Data Scientist at Netflix",
+    imgSrc: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150&h=150"
+  },
+  {
+    tempId: 5,
+    testimonial: "Automated applications saved me hours every week. Best investment for my job search.",
+    by: "Chris Wilson, Marketing Specialist",
+    imgSrc: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150&h=150"
+  },
+  {
+    tempId: 6,
+    testimonial: "Finally, a platform that gives actionable feedback. The AI avatar feedback was spot on.",
+    by: "Amanda Tyrell, HR Consultant",
+    imgSrc: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=150&h=150"
+  },
+  {
+    tempId: 7,
+    testimonial: "I landed my dream job at a FAANG company thanks to the rigorous practice here.",
+    by: "James Carter, Senior Developer",
+    imgSrc: "https://images.unsplash.com/photo-1522075469751-3a3694c2d654?auto=format&fit=crop&q=80&w=150&h=150"
+  }
 ];
 
 const Testimonials = () => {
   return (
-    <section id="testimonials" className="py-24">
-      <div className="container">
+    <section id="testimonials" className="relative py-24 bg-background overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 bg-primary/5 dark:bg-primary/2" />
+      <div className="absolute right-0 top-1/2 h-96 w-[800px] translate-x-1/3 -translate-y-1/2 rounded-full bg-primary/20 blur-[100px] dark:bg-primary/10 opacity-30" />
+
+      <div className="container relative z-10 overflow-hidden">
         <div className="mx-auto mb-16 max-w-2xl text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-wider text-primary">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mb-3 text-sm font-medium uppercase tracking-wider text-primary"
+          >
             Testimonials
-          </p>
-          <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-4 text-3xl font-bold text-foreground sm:text-4xl"
+          >
             Trusted by Thousands of Professionals
-          </h2>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-muted-foreground"
+          >
+            See how HireSense AI is helping professionals across the globe achieve their career goals.
+          </motion.p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <div
-              key={t.name}
-              className="flex flex-col rounded-lg border border-border/50 bg-card p-6"
-            >
-              <p className="mb-6 flex-1 text-sm leading-relaxed text-muted-foreground italic">
-                "{t.quote}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
-                  {t.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <StaggerTestimonials testimonials={TESTIMONIALS} />
+        </motion.div>
       </div>
     </section>
   );
